@@ -3,7 +3,10 @@ package main
 import (
 	"github.com/veandco/go-sdl2/sdl"
 	"fmt"
+	"strconv"
 )
+
+const DEBUG bool = true
 
 func main() {
 	fmt.Println("Starting...")
@@ -16,6 +19,9 @@ func main() {
 	defer renderer.Destroy()
 
 	rect := sdl.Rect{X: 200, Y: 100, W: 20, H: 20}
+
+	count := 0
+	timer := sdl.GetTicks()
 
 	for {
 		// Poll events
@@ -40,7 +46,16 @@ func main() {
 		renderer.SetDrawColor(255, 255, 255, 255)
 		renderer.FillRect(&rect)
 
-		// Present
+		// Debug stuff
+		if DEBUG {
+			count++
+			if then := sdl.GetTicks(); then - timer > 1000 {
+				window.SetTitle("paintsson  FPS: " + strconv.FormatInt(int64(count), 10))
+				timer = then
+				count = 0
+			}
+		}
+
 		renderer.Present()
 	}
 }
