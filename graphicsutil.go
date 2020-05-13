@@ -59,12 +59,37 @@ func drawLine(buffer *sdl.Texture, b brush, from point, to point) {
 	length := 0.0
 	increment := math.Sqrt(kx * kx + ky * ky)
 
+	var list []point
+
 	for i := 0; length < totLength + 0.5; i++ {
 		x := float64(from.x) + kx * float64(i)
 		y := float64(from.y) + ky * float64(i)
-		draw(buffer, b, point{int32(x), int32(y)})
+		list = append(list, point{int32(x), int32(y)})
 		length += increment
 	}
+
+	drawMultiple(buffer, b, list)
+}
+
+func drawMultiple(buffer *sdl.Texture, b brush, list []point) {
+	pixels, _, err := buffer.Lock(nil)
+	if err != nil { panic(err) }
+
+	for i := 0; i < len(list); i++ {
+		p := list[i]
+		for x := p.x; x < p.x + b.rect.W; x++ {
+			for y := p.y; y < p.y + b.rect.H; y++ {
+				index := (width * y + x) * 4
+				if int(index + 3) > len(pixels) { continue }
+				pixels[index] = byte(b.color.A)
+				pixels[index + 1] = byte(b.color.B)
+				pixels[index + 2] = byte(b.color.G)
+				pixels[index + 3] = byte(b.color.R)
+			}
+		}
+	}
+
+	buffer.Unlock()
 }
 
 func draw(buffer *sdl.Texture, b brush, p point) {
