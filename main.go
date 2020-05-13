@@ -12,11 +12,6 @@ const (
 	height int32 = 600
 )
 
-type brush struct {
-	rect sdl.Rect
-	color sdl.Color
-}
-
 func main() {
 	fmt.Println("Starting...")
 
@@ -31,17 +26,18 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
-	//screenRect := sdl.Rect{X: 0, Y: 0, W: width, H: height}
 	
-	var b brush
-	b.rect = sdl.Rect{X: 200, Y: 100, W: 10, H: 10}
-	b.color = sdl.Color{R: 255, G: 255, B: 0, A: 255}
+	b := brush {
+		rect: sdl.Rect{X: 200, Y: 100, W: 10, H: 10},
+		color: sdl.Color{R: 255, G: 255, B: 0, A: 255},
+	}
 
 	sdl.ShowCursor(0)
 
 	count := 0
 	timer := sdl.GetTicks()
+
+	var root point
 
 	for {
 		// Poll events
@@ -57,18 +53,11 @@ func main() {
 		b.rect.X = mX
 		b.rect.Y = mY
 		if button == 1 {
-			pixels, _, _ := buffer.Lock(nil)
-			for x := b.rect.X; x < b.rect.X + b.rect.W; x++ {
-				for y := b.rect.Y; y < b.rect.Y + b.rect.H; y++ {
-					index := (width * y + x) * 4
-					if int(index + 3) > len(pixels) { continue }
-					pixels[index] = byte(b.color.A)
-					pixels[index + 1] = byte(b.color.B)
-					pixels[index + 2] = byte(b.color.G)
-					pixels[index + 3] = byte(b.color.R)
-				}
+			p := point{x: mX, y: mY}
+			if root.distance(p) > 2 {
+				root = p
+				draw(buffer, b)
 			}
-			buffer.Unlock()
 		}
 
 		// Clear screen
