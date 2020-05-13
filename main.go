@@ -12,23 +12,23 @@ const (
 	height int32 = 600
 )
 
+var lines []line
+var buffer *sdl.Texture
+var renderer *sdl.Renderer
+var window *sdl.Window
+var b brush
+
 func main() {
 	fmt.Println("Starting...")
 
-	window, renderer, err := initSDL()
-	if err != nil {
-		panic(err)
-	}
+	window, renderer = initSDL()
 	defer window.Destroy()
 	defer renderer.Destroy()
 
-	buffer, err := renderer.CreateTexture(sdl.PIXELFORMAT_RGBA8888, sdl.TEXTUREACCESS_STREAMING, width, height)
-	if err != nil {
-		panic(err)
-	}
-	
-	b := brush {
-		rect: sdl.Rect{X: 200, Y: 100, W: 10, H: 10},
+	buffer, _ = renderer.CreateTexture(sdl.PIXELFORMAT_RGBA8888, sdl.TEXTUREACCESS_STREAMING, width, height)
+
+	b = brush {
+		rect: sdl.Rect{X: 200, Y: 100, W: 5, H: 5},
 		color: sdl.Color{R: 255, G: 255, B: 0, A: 255},
 	}
 
@@ -38,6 +38,7 @@ func main() {
 	timer := sdl.GetTicks()
 
 	var root point
+	var down bool = false
 
 	for {
 		// Poll events
@@ -54,22 +55,21 @@ func main() {
 		b.rect.Y = mY
 		if button == 1 {
 			p := point{x: mX, y: mY}
-			if root.distance(p) > 2 {
+
+			if !down {
 				root = p
-				draw(buffer, b)
+				lines = append(lines, line{root, p})
+			} else {
+				lines = append(lines, line{root, p})
+				root = p
 			}
+			
+			down = true
+		} else {
+			down = false
 		}
 
-		// Clear screen
-		renderer.SetDrawColor(0, 0, 0, 255)
-		renderer.Clear()
-
-		// Draw buffer
-		renderer.Copy(buffer, nil, nil)
-
-		// Draw rect
-		renderer.SetDrawColor(b.color.R, b.color.G, b.color.B, b.color.A)
-		renderer.FillRect(&b.rect)
+		render()
 
 		// Debug stuff
 		if DEBUG {
@@ -80,17 +80,39 @@ func main() {
 				count = 0
 			}
 		}
-
-		renderer.Present()
 	}
 }
 
-func initSDL() (*sdl.Window, *sdl.Renderer, error) {
+func render() {
+	length := len(lines)
+	for i := 0; i < length; i++ {
+		drawLine(buffer, b, lines[0].from, lines[0].to)
+		lines = lines[1:]
+	}
+
+	// Clear screen
+	renderer.SetDrawColor(0, 0, 0, 255)
+	renderer.Clear()
+
+	// Draw buffer
+	renderer.Copy(buffer, nil, nil)
+
+	// Draw rect
+	renderer.SetDrawColor(b.color.R, b.color.G, b.color.B, b.color.A)
+	renderer.FillRect(&b.rect)
+
+	renderer.Present()
+}
+
+func initSDL() (*sdl.Window, *sdl.Renderer) {
 	err := sdl.Init(sdl.INIT_EVERYTHING)
+	if err != nil { panic(err) }
 
 	window, err := sdl.CreateWindow("paintsson", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, width, height, sdl.WINDOW_OPENGL)
+	if err != nil { panic(err) }
 
 	renderer, err := sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED)
+	if err != nil { panic(err) }
 
-	return window, renderer, err
+	return window, renderer
 }
