@@ -18,10 +18,11 @@ var buffer *sdl.Texture
 var renderer *sdl.Renderer
 var window *sdl.Window
 var b brush
-var background sdl.Color
 var command string
 var font *ttf.Font
-var black sdl.Color
+
+// Colors
+var colors map[string]sdl.Color
 
 func main() {
 	fmt.Println("Starting...")
@@ -37,13 +38,13 @@ func main() {
 		color: sdl.Color{R: 255, G: 255, B: 0, A: 255},
 	}
 
-	black = sdl.Color{R: 0, G: 0, B: 0, A: 255}
+	initColors()
+
 	var err error
 	font, err = ttf.OpenFont("fonts/CONSOLAB.ttf", 26)
 	if err != nil { panic(err) }
 
-	background = sdl.Color{R: 0, G: 50, B: 0, A: 255}
-	clearBuffer(buffer, background)
+	clearBuffer(buffer, colors["black"])
 
 	sdl.ShowCursor(0)
 
@@ -142,7 +143,7 @@ func render() {
 	// Text field
 	renderer.SetDrawColor(255, 255, 255, 255)
 	renderer.FillRect(&sdl.Rect{X: 0, Y: height - 30, W: width, H: 30})
-	surface, _ := font.RenderUTF8Solid(command, black)
+	surface, _ := font.RenderUTF8Solid(command, colors["black"])
 	tex, _ := renderer.CreateTextureFromSurface(surface)
 	w, h, _ := font.SizeUTF8(command)
 	renderer.Copy(tex, nil, &sdl.Rect{X: 5, Y: height - 27, W: int32(w), H: int32(h)})
@@ -165,4 +166,14 @@ func initSDL() (*sdl.Window, *sdl.Renderer) {
 	}
 
 	return window, renderer
+}
+
+func initColors() {
+	colors = make(map[string]sdl.Color)
+	colors["black"] = sdl.Color{R: 0, G: 0, B: 0, A: 255}
+	colors["white"] = sdl.Color{R: 255, G: 255, B: 255, A: 255}
+	colors["blue"] = sdl.Color{R: 0, G: 0, B: 255, A: 255}
+	colors["green"] = sdl.Color{R: 0, G: 255, B: 0, A: 255}
+	colors["red"] = sdl.Color{R: 255, G: 0, B: 0, A: 255}
+	colors["yellow"] = sdl.Color{R: 255, G: 255, B: 0, A: 255}
 }
