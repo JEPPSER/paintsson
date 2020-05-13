@@ -24,6 +24,18 @@ func (p point) distance(other point) float64 {
 	return math.Hypot(float64(p.x - other.x), float64(p.y - other.y))
 }
 
+func clearBuffer(buffer *sdl.Texture, color sdl.Color) {
+	pixels, _, err := buffer.Lock(nil)
+	if err != nil { panic(err) }
+	for i := 0; i < len(pixels); i+=4 {
+		pixels[i] = byte(color.A)
+		pixels[i + 1] = byte(color.B)
+		pixels[i + 2] = byte(color.G)
+		pixels[i + 3] = byte(color.R)
+	}
+	buffer.Unlock()
+}
+
 func drawLine(buffer *sdl.Texture, b brush, from point, to point) {
 	if from.x > to.x {
 		tempTo := point{from.x, from.y}
@@ -74,27 +86,20 @@ func drawLine(buffer *sdl.Texture, b brush, from point, to point) {
 func drawMultiple(buffer *sdl.Texture, b brush, list []point) {
 	pixels, _, err := buffer.Lock(nil)
 	if err != nil { panic(err) }
-
 	for i := 0; i < len(list); i++ {
-		p := list[i]
-		for x := p.x; x < p.x + b.rect.W; x++ {
-			for y := p.y; y < p.y + b.rect.H; y++ {
-				index := (width * y + x) * 4
-				if int(index + 3) > len(pixels) { continue }
-				pixels[index] = byte(b.color.A)
-				pixels[index + 1] = byte(b.color.B)
-				pixels[index + 2] = byte(b.color.G)
-				pixels[index + 3] = byte(b.color.R)
-			}
-		}
+		fillRect(pixels, b, list[i])
 	}
-
 	buffer.Unlock()
 }
 
 func draw(buffer *sdl.Texture, b brush, p point) {
 	pixels, _, err := buffer.Lock(nil)
 	if err != nil { panic(err) }
+	fillRect(pixels, b, p)
+	buffer.Unlock()
+}
+
+func fillRect(pixels []byte, b brush, p point) {
 	for x := p.x; x < p.x + b.rect.W; x++ {
 		for y := p.y; y < p.y + b.rect.H; y++ {
 			index := (width * y + x) * 4
@@ -105,5 +110,4 @@ func draw(buffer *sdl.Texture, b brush, p point) {
 			pixels[index + 3] = byte(b.color.R)
 		}
 	}
-	buffer.Unlock()
 }

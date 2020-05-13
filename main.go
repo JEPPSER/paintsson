@@ -17,6 +17,7 @@ var buffer *sdl.Texture
 var renderer *sdl.Renderer
 var window *sdl.Window
 var b brush
+var background sdl.Color
 
 func main() {
 	fmt.Println("Starting...")
@@ -31,6 +32,9 @@ func main() {
 		rect: sdl.Rect{X: 200, Y: 100, W: 5, H: 5},
 		color: sdl.Color{R: 255, G: 255, B: 0, A: 255},
 	}
+
+	background = sdl.Color{R: 0, G: 50, B: 0, A: 255}
+	clearBuffer(buffer, background)
 
 	sdl.ShowCursor(0)
 
@@ -47,6 +51,12 @@ func main() {
 			case *sdl.QuitEvent:
 				return
 			}
+		}
+
+		// Keyboard input
+		keys := sdl.GetKeyboardState()
+		if keys[sdl.SCANCODE_BACKSPACE] == 1 {
+			clearBuffer(buffer, background)
 		}
 
 		// Mouse input
@@ -90,16 +100,14 @@ func render() {
 		lines = lines[1:]
 	}
 
-	// Clear screen
-	renderer.SetDrawColor(0, 0, 0, 255)
-	renderer.Clear()
-
 	// Draw buffer
 	renderer.Copy(buffer, nil, nil)
 
-	// Draw rect
+	// Draw cursor
 	renderer.SetDrawColor(b.color.R, b.color.G, b.color.B, b.color.A)
 	renderer.FillRect(&b.rect)
+
+	// Text field
 
 	renderer.Present()
 }
