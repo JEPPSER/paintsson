@@ -9,42 +9,50 @@ import (
 
 const (
 	DEBUG bool = true
-	width int32 = 800
-	height int32 = 600
+	width int32 = 1320
+	height int32 = 720
 )
-
-var lines []line
-var buffer *sdl.Texture
-var renderer *sdl.Renderer
-var window *sdl.Window
-var b brush
-var command string
-var font *ttf.Font
 
 // Colors
 var colors map[string]sdl.Color
 
+type textfield struct {
+	command string
+	surface *sdl.Surface
+	texture *sdl.Texture
+	font *ttf.Font
+}
+
 func main() {
 	fmt.Println("Starting...")
 
-	window, renderer = initSDL()
+	window, renderer := initSDL()
 	defer window.Destroy()
 	defer renderer.Destroy()
 
-	buffer, _ = renderer.CreateTexture(sdl.PIXELFORMAT_RGBA8888, sdl.TEXTUREACCESS_STREAMING, width, height)
+	buffer, err := renderer.CreateTexture(sdl.PIXELFORMAT_RGBA8888, sdl.TEXTUREACCESS_STREAMING, width, height)
+	if err != nil { panic(err) }
 
-	b = brush {
+	var textSurface *sdl.Surface
+	var textTexture *sdl.Texture
+	font, err := ttf.OpenFont("fonts/CONSOLAB.ttf", 26)
+	if err != nil { panic(err) }
+	
+	textfield := &textfield {
+		command: "",
+		surface: textSurface,
+		texture: textTexture,
+		font: font,
+	}
+
+	b := &brush {
 		rect: sdl.Rect{X: 200, Y: 100, W: 5, H: 5},
 		color: sdl.Color{R: 255, G: 255, B: 0, A: 255},
 	}
 
 	initColors()
-
-	var err error
-	font, err = ttf.OpenFont("fonts/CONSOLAB.ttf", 26)
-	if err != nil { panic(err) }
-
 	clearBuffer(buffer, colors["black"])
+	updateTextfield(renderer, textfield)
 
 	sdl.ShowCursor(0)
 
@@ -61,10 +69,11 @@ func main() {
 			case *sdl.QuitEvent:
 				return
 			case *sdl.KeyboardEvent:
-				e := event.(*sdl.KeyboardEvent)
-				keyboardPressed(e)
+				keyboardPressed(event.(*sdl.KeyboardEvent), renderer, buffer, b, textfield)
 			}
 		}
+
+		var l *line
 
 		// Mouse input
 		mX, mY, button := sdl.GetMouseState()
@@ -75,9 +84,9 @@ func main() {
 
 			if !down {
 				root = p
-				lines = append(lines, line{root, p})
-			} else {
-				lines = append(lines, line{root, p})
+				l = &line{root, p}
+			} else if p.distance(root) > 4 {
+				l = &line{root, p}
 				root = p
 			}
 			
@@ -86,7 +95,10 @@ func main() {
 			down = false
 		}
 
-		render()
+		// Rendering
+		renderBuffer(renderer, buffer, b, l)
+		renderTextfield(renderer, textfield)
+		renderer.Present()
 
 		// Debug stuff
 		if DEBUG {
@@ -100,7 +112,7 @@ func main() {
 	}
 }
 
-func keyboardPressed(e *sdl.KeyboardEvent) {
+func keyboardPressed(e *sdl.KeyboardEvent, renderer *sdl.Renderer, buffer *sdl.Texture, b *brush, tf *textfield) {
 	if e.Type == sdl.KEYDOWN {
 		k := e.Keysym.Sym
 
@@ -110,27 +122,34 @@ func keyboardPressed(e *sdl.KeyboardEvent) {
 				k == 32 ||
 				k == 44 ||
 				k == 45 {
-			command += string(k)
+			tf.command += string(k)
 		}
 
 		// Execute command
 		if k == 13 {
-			parse(command)
-			command = ""
+			parse(tf.command, buffer, b)
+			tf.command = ""
 		}
 
 		// Backspace
-		if k == 8 && len(command) > 0 {
-			command = command[:len(command) - 1]
+		if k == 8 && len(tf.command) > 0 {
+			tf.command = tf.command[:len(tf.command) - 1]
 		}
+
+		updateTextfield(renderer, tf)
 	}
 }
 
-func render() {
-	length := len(lines)
-	for i := 0; i < length; i++ {
-		drawLine(buffer, b, lines[0].from, lines[0].to)
-		lines = lines[1:]
+func updateTextfield(renderer *sdl.Renderer, tf *textfield) {
+	var err error
+	tf.surface, err = tf.font.RenderUTF8Solid(">" + tf.command, colors["black"])
+	tf.texture, err = renderer.CreateTextureFromSurface(tf.surface)
+	if err != nil { panic(err) }
+}
+
+func renderBuffer(renderer *sdl.Renderer, buffer *sdl.Texture, b *brush, l *line) {
+	if l != nil {
+		drawLine(buffer, b, l.from, l.to)
 	}
 
 	// Draw buffer
@@ -139,16 +158,15 @@ func render() {
 	// Draw cursor
 	renderer.SetDrawColor(b.color.R, b.color.G, b.color.B, b.color.A)
 	renderer.FillRect(&b.rect)
+}
 
-	// Text field
-	renderer.SetDrawColor(255, 255, 255, 255)
+func renderTextfield(renderer *sdl.Renderer, tf *textfield) {
+	renderer.SetDrawColor(220, 220, 220, 255)
 	renderer.FillRect(&sdl.Rect{X: 0, Y: height - 30, W: width, H: 30})
-	surface, _ := font.RenderUTF8Solid(command, colors["black"])
-	tex, _ := renderer.CreateTextureFromSurface(surface)
-	w, h, _ := font.SizeUTF8(command)
-	renderer.Copy(tex, nil, &sdl.Rect{X: 5, Y: height - 27, W: int32(w), H: int32(h)})
-
-	renderer.Present()
+	renderer.SetDrawColor(170, 170, 170, 255)
+	renderer.FillRect(&sdl.Rect{X: 0, Y: height - 33, W: width, H: 3})
+	w, h, _ := tf.font.SizeUTF8(">" + tf.command)
+	renderer.Copy(tf.texture, nil, &sdl.Rect{X: 5, Y: height - 27, W: int32(w), H: int32(h)})
 }
 
 func initSDL() (*sdl.Window, *sdl.Renderer) {
@@ -176,4 +194,5 @@ func initColors() {
 	colors["green"] = sdl.Color{R: 0, G: 255, B: 0, A: 255}
 	colors["red"] = sdl.Color{R: 255, G: 0, B: 0, A: 255}
 	colors["yellow"] = sdl.Color{R: 255, G: 255, B: 0, A: 255}
+	colors["gray"] = sdl.Color{R: 150, G: 150, B: 150, A: 255}
 }
