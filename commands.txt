@@ -1,0 +1,11 @@
+Implemented:
+    size [int] // Sets brush size
+    color [string] // Sets brush color
+    clear [string] // Clears the screen by specified color
+
+TODO:
+    export [path] // exports a .bmp file
+    import [path] // imports a .bmp file
+    exit // Closes program
+    brush [int] // Sets brush type (0: rect, 1: circle, 2: ??)
+    clear // Clears by latest color
