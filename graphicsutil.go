@@ -24,6 +24,26 @@ func (p point) distance(other point) float64 {
 	return math.Hypot(float64(p.x - other.x), float64(p.y - other.y))
 }
 
+func pastePixels(buffer *sdl.Texture, paste []byte, oldWidth int, oldHeight int) {
+	pixels, _, err := buffer.Lock(nil)
+	if err != nil { panic(err) }
+	for x := 0; x < oldWidth; x++ {
+		for y := 0; y < oldHeight; y++ {
+			if int32(x) >= width || int32(y) >= height {
+				continue
+			}
+			oldIndex := (oldWidth * y + x) * 4
+			newIndex := (int(width) * y + x) * 4
+			if int(newIndex + 3) > len(pixels) { continue }
+			pixels[newIndex] = paste[oldIndex]
+			pixels[newIndex + 1] = paste[oldIndex + 1]
+			pixels[newIndex + 2] = paste[oldIndex + 2]
+			pixels[newIndex + 3] = paste[oldIndex + 3]
+		}
+	}
+	buffer.Unlock()
+}
+
 func clearBuffer(buffer *sdl.Texture, color sdl.Color) {
 	pixels, _, err := buffer.Lock(nil)
 	if err != nil { panic(err) }

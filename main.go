@@ -72,10 +72,16 @@ func main() {
 			case *sdl.WindowEvent:
 				e := event.(*sdl.WindowEvent)
 				if e.Event == sdl.WINDOWEVENT_SIZE_CHANGED {
+					oldWidth := width;
+					oldHeight := height;
 					width = e.Data1
 					height = e.Data2
+
+					oldPixels, _, _ := buffer.Lock(nil)
+					buffer.Unlock()
+
 					buffer, _ = renderer.CreateTexture(sdl.PIXELFORMAT_RGBA8888, sdl.TEXTUREACCESS_STREAMING, width, height)
-					clearBuffer(buffer, colors["black"])
+					pastePixels(buffer, oldPixels, int(oldWidth), int(oldHeight))
 				}
 			case *sdl.QuitEvent:
 				return
