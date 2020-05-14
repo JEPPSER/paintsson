@@ -7,11 +7,9 @@ import (
 	"strconv"
 )
 
-const (
-	DEBUG bool = true
-	width int32 = 1320
-	height int32 = 720
-)
+var width int32
+var height int32
+var DEBUG bool
 
 // Colors
 var colors map[string]sdl.Color
@@ -26,12 +24,17 @@ type textfield struct {
 func main() {
 	fmt.Println("Starting...")
 
+	width = 1000
+	height = 700
+	DEBUG = true
+
 	window, renderer := initSDL()
 	defer window.Destroy()
 	defer renderer.Destroy()
 
 	buffer, err := renderer.CreateTexture(sdl.PIXELFORMAT_RGBA8888, sdl.TEXTUREACCESS_STREAMING, width, height)
 	if err != nil { panic(err) }
+	defer buffer.Destroy()
 
 	var textSurface *sdl.Surface
 	var textTexture *sdl.Texture
@@ -66,6 +69,14 @@ func main() {
 		// Poll events
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch event.(type) {
+			case *sdl.WindowEvent:
+				e := event.(*sdl.WindowEvent)
+				if e.Event == sdl.WINDOWEVENT_SIZE_CHANGED {
+					width = e.Data1
+					height = e.Data2
+					buffer, _ = renderer.CreateTexture(sdl.PIXELFORMAT_RGBA8888, sdl.TEXTUREACCESS_STREAMING, width, height)
+					clearBuffer(buffer, colors["black"])
+				}
 			case *sdl.QuitEvent:
 				return
 			case *sdl.KeyboardEvent:
@@ -97,7 +108,7 @@ func main() {
 
 		// Rendering
 		renderBuffer(renderer, buffer, b, l)
-		renderTextfield(renderer, textfield)
+		renderTextfield(renderer, textfield, window)
 		renderer.Present()
 
 		// Debug stuff
@@ -160,7 +171,7 @@ func renderBuffer(renderer *sdl.Renderer, buffer *sdl.Texture, b *brush, l *line
 	renderer.FillRect(&b.rect)
 }
 
-func renderTextfield(renderer *sdl.Renderer, tf *textfield) {
+func renderTextfield(renderer *sdl.Renderer, tf *textfield, window *sdl.Window) {
 	renderer.SetDrawColor(220, 220, 220, 255)
 	renderer.FillRect(&sdl.Rect{X: 0, Y: height - 30, W: width, H: 30})
 	renderer.SetDrawColor(170, 170, 170, 255)
@@ -175,6 +186,7 @@ func initSDL() (*sdl.Window, *sdl.Renderer) {
 
 	window, err := sdl.CreateWindow("paintsson", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, width, height, sdl.WINDOW_OPENGL)
 	if err != nil { panic(err) }
+	window.SetResizable(true)
 
 	renderer, err := sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED)
 	if err != nil { panic(err) }
