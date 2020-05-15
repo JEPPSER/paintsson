@@ -5,6 +5,8 @@ import (
 	"github.com/veandco/go-sdl2/ttf"
 	"fmt"
 	"strconv"
+	"io/ioutil"
+	"strings"
 )
 
 var width int32
@@ -48,14 +50,14 @@ func main() {
 		font: font,
 	}
 
+	initColors()
+	clearBuffer(buffer, colors["chalkboard"])
+	updateTextfield(renderer, textfield)
+
 	b := &brush {
 		rect: sdl.Rect{X: 200, Y: 100, W: 5, H: 5},
-		color: sdl.Color{R: 255, G: 255, B: 0, A: 255},
+		color: colors["white"],
 	}
-
-	initColors()
-	clearBuffer(buffer, colors["black"])
-	updateTextfield(renderer, textfield)
 
 	sdl.ShowCursor(0)
 
@@ -144,7 +146,7 @@ func keyboardPressed(e *sdl.KeyboardEvent, renderer *sdl.Renderer, buffer *sdl.T
 
 		// Execute command
 		if k == 13 {
-			parse(tf.command, buffer, b)
+			parseCommand(tf.command, buffer, b)
 			tf.command = ""
 		}
 
@@ -212,11 +214,8 @@ func initSDL() (*sdl.Window, *sdl.Renderer) {
 
 func initColors() {
 	colors = make(map[string]sdl.Color)
-	colors["black"] = sdl.Color{R: 0, G: 0, B: 0, A: 255}
-	colors["white"] = sdl.Color{R: 255, G: 255, B: 255, A: 255}
-	colors["blue"] = sdl.Color{R: 0, G: 0, B: 255, A: 255}
-	colors["green"] = sdl.Color{R: 0, G: 255, B: 0, A: 255}
-	colors["red"] = sdl.Color{R: 255, G: 0, B: 0, A: 255}
-	colors["yellow"] = sdl.Color{R: 255, G: 255, B: 0, A: 255}
-	colors["gray"] = sdl.Color{R: 150, G: 150, B: 150, A: 255}
+	dat, err := ioutil.ReadFile("colors.cfg")
+	if err != nil { panic(err) }
+	str := strings.ReplaceAll(string(dat), "\r", "")
+	parseColors(str)
 }

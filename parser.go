@@ -7,7 +7,7 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
-func parse(str string, buffer *sdl.Texture, b *brush) {
+func parseCommand(str string, buffer *sdl.Texture, b *brush) {
 	parts := strings.Split(str, " ")
 	if len(parts) == 1 {
 
@@ -28,14 +28,30 @@ func parse(str string, buffer *sdl.Texture, b *brush) {
 		} else if parts[0] == "brush" {
 			t, err := strconv.ParseInt(parts[1], 10, 32)
 
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-
+			if err != nil { return }
 			if t < 0 || t > 1 { return }
 
 			b.brushType = int(t)
 		}
+	}
+}
+
+func parseColors(str string) {
+	lines := strings.Split(str, "\n")
+	for i := 0; i < len(lines); i++ {
+		parts := strings.Split(lines[i], " ")
+		if len(parts) != 2 { continue }
+
+		values := strings.Split(parts[1], ",")
+		if len(values) != 3 { continue }
+
+		r, err := strconv.ParseUint(values[0], 10, 8)
+		if err != nil { continue }
+		g, err := strconv.ParseUint(values[1], 10, 8)
+		if err != nil { continue }
+		b, err := strconv.ParseUint(values[2], 10, 8)
+		if err != nil { continue }
+
+		colors[parts[0]] = sdl.Color{R: uint8(r), G: uint8(g), B: uint8(b), A: uint8(255)}
 	}
 }
