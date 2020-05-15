@@ -43,6 +43,8 @@ func main() {
 	font, err := ttf.OpenFont("fonts/CONSOLAB.ttf", 26)
 	if err != nil { panic(err) }
 	
+	initColors()
+
 	textfield := &textfield {
 		command: "",
 		surface: textSurface,
@@ -50,14 +52,14 @@ func main() {
 		font: font,
 	}
 
-	initColors()
-	clearBuffer(buffer, colors["chalkboard"])
-	updateTextfield(renderer, textfield)
-
 	b := &brush {
 		rect: sdl.Rect{X: 200, Y: 100, W: 5, H: 5},
 		color: colors["white"],
 	}
+
+	updateTextfield(renderer, textfield)
+	b.clearColor = colors["chalkboard"]
+	clearBuffer(buffer, b)
 
 	sdl.ShowCursor(0)
 
@@ -161,7 +163,7 @@ func keyboardPressed(e *sdl.KeyboardEvent, renderer *sdl.Renderer, buffer *sdl.T
 
 func updateTextfield(renderer *sdl.Renderer, tf *textfield) {
 	var err error
-	tf.surface, err = tf.font.RenderUTF8Solid(">" + tf.command, colors["black"])
+	tf.surface, err = tf.font.RenderUTF8Solid(">" + tf.command, colors["gray"])
 	tf.texture, err = renderer.CreateTextureFromSurface(tf.surface)
 	if err != nil { panic(err) }
 }

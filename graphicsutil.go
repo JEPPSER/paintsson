@@ -8,6 +8,7 @@ import (
 type brush struct {
 	rect sdl.Rect
 	color sdl.Color
+	clearColor sdl.Color
 	brushType int
 }
 
@@ -45,14 +46,14 @@ func pastePixels(buffer *sdl.Texture, paste []byte, oldWidth int, oldHeight int)
 	buffer.Unlock()
 }
 
-func clearBuffer(buffer *sdl.Texture, color sdl.Color) {
+func clearBuffer(buffer *sdl.Texture, b *brush) {
 	pixels, _, err := buffer.Lock(nil)
 	if err != nil { panic(err) }
 	for i := 0; i < len(pixels); i+=4 {
-		pixels[i] = byte(color.A)
-		pixels[i + 1] = byte(color.B)
-		pixels[i + 2] = byte(color.G)
-		pixels[i + 3] = byte(color.R)
+		pixels[i] = byte(b.clearColor.A)
+		pixels[i + 1] = byte(b.clearColor.B)
+		pixels[i + 2] = byte(b.clearColor.G)
+		pixels[i + 3] = byte(b.clearColor.R)
 	}
 	buffer.Unlock()
 }

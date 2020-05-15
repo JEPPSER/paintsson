@@ -10,7 +10,10 @@ import (
 func parseCommand(str string, buffer *sdl.Texture, b *brush) {
 	parts := strings.Split(str, " ")
 	if len(parts) == 1 {
-
+		
+		if parts[0] == "clear" {
+			clearBuffer(buffer, b)
+		}
 	} else if len(parts) == 2 {
 
 		if parts[0] == "size" {
@@ -24,7 +27,8 @@ func parseCommand(str string, buffer *sdl.Texture, b *brush) {
 		} else if parts[0] == "color" {
 			b.color = colors[parts[1]]
 		} else if parts[0] == "clear" {
-			clearBuffer(buffer, colors[parts[1]])
+			b.clearColor = colors[parts[1]]
+			clearBuffer(buffer, b)
 		} else if parts[0] == "brush" {
 			t, err := strconv.ParseInt(parts[1], 10, 32)
 
