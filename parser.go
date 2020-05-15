@@ -21,14 +21,21 @@ func parse(str string, buffer *sdl.Texture, b *brush) {
 			}
 			b.rect.W = int32(size)
 			b.rect.H = int32(size)
-		}
-		
-		if parts[0] == "color" {
+		} else if parts[0] == "color" {
 			b.color = colors[parts[1]]
-		}
-		
-		if parts[0] == "clear" {
+		} else if parts[0] == "clear" {
 			clearBuffer(buffer, colors[parts[1]])
+		} else if parts[0] == "brush" {
+			t, err := strconv.ParseInt(parts[1], 10, 32)
+
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			if t < 0 || t > 1 { return }
+
+			b.brushType = int(t)
 		}
 	}
 }

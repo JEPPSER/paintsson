@@ -8,6 +8,7 @@ import (
 type brush struct {
 	rect sdl.Rect
 	color sdl.Color
+	brushType int
 }
 
 type point struct {
@@ -84,8 +85,8 @@ func drawLine(buffer *sdl.Texture, b *brush, from point, to point) {
 		kx = 1 / (1 + k)
 		ky = k / (1 + k)
 	}
-	kx *= float64(b.rect.W) * 0.2;
-	ky *= float64(b.rect.H) * 0.2;
+	kx *= float64(b.rect.W) * 0.1;
+	ky *= float64(b.rect.H) * 0.1;
 
 	totLength := from.distance(to)
 	length := 0.0
@@ -107,7 +108,11 @@ func drawMultiple(buffer *sdl.Texture, b *brush, list []point) {
 	pixels, _, err := buffer.Lock(nil)
 	if err != nil { panic(err) }
 	for i := 0; i < len(list); i++ {
-		fillRect(pixels, b, list[i])
+		if b.brushType == 0 {
+			fillRect(pixels, b, list[i])
+		} else if b.brushType == 1 {
+			fillCircle(pixels, b, list[i])
+		}
 	}
 	buffer.Unlock()
 }
@@ -117,6 +122,46 @@ func draw(buffer *sdl.Texture, b *brush, p point) {
 	if err != nil { panic(err) }
 	fillRect(pixels, b, p)
 	buffer.Unlock()
+}
+
+func fillCircle(pixels []byte, b *brush, p point) {
+	origo := float64(b.rect.H) / 2
+	y := 0
+	if b.rect.H > 1 { y = 1 }
+	for ; y < int(b.rect.H); y++ {
+		cY := origo - float64(y)
+		cX := math.Sqrt(math.Pow(origo, 2) - math.Pow(cY, 2))
+		fromX := int(p.x) + int(math.Round(cX * -1 + origo))
+		toX := int(p.x) + int(math.Round(cX + origo))
+		fillRow(pixels, b, fromX, toX, y + int(p.y))
+	}
+}
+
+func drawCircle(renderer *sdl.Renderer, b *brush, p point) {
+	origo := float64(b.rect.H) / 2
+	y := 0
+	if b.rect.H > 1 { y = 1 }
+	for ; y < int(b.rect.H); y++ {
+		cY := origo - float64(y)
+		cX := math.Sqrt(math.Pow(origo, 2) - math.Pow(cY, 2))
+		fromX := int(p.x) + int(math.Round(cX * -1 + origo))
+		toX := int(p.x) + int(math.Round(cX + origo))
+		
+		for x := fromX; x <= toX; x++ {
+			renderer.DrawPoint(int32(x), p.y + int32(y))
+		}
+	}
+}
+
+func fillRow(pixels []byte, b *brush, fromX int, toX int, y int) {
+	for x := fromX; x <= toX; x++ {
+		index := (int(width) * y + x) * 4
+		if int(index + 3) > len(pixels) { continue }
+		pixels[index] = byte(b.color.A)
+		pixels[index + 1] = byte(b.color.B)
+		pixels[index + 2] = byte(b.color.G)
+		pixels[index + 3] = byte(b.color.R)
+	}
 }
 
 func fillRect(pixels []byte, b *brush, p point) {

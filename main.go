@@ -174,14 +174,20 @@ func renderBuffer(renderer *sdl.Renderer, buffer *sdl.Texture, b *brush, l *line
 
 	// Draw cursor
 	renderer.SetDrawColor(b.color.R, b.color.G, b.color.B, b.color.A)
-	renderer.FillRect(&b.rect)
+	if b.brushType == 0 {
+		renderer.FillRect(&b.rect)
+	} else if b.brushType == 1 {
+		drawCircle(renderer, b, point{b.rect.X, b.rect.Y})
+	}
 }
 
 func renderTextfield(renderer *sdl.Renderer, tf *textfield, window *sdl.Window) {
 	renderer.SetDrawColor(220, 220, 220, 255)
 	renderer.FillRect(&sdl.Rect{X: 0, Y: height - 30, W: width, H: 30})
+
 	renderer.SetDrawColor(170, 170, 170, 255)
 	renderer.FillRect(&sdl.Rect{X: 0, Y: height - 33, W: width, H: 3})
+
 	w, h, _ := tf.font.SizeUTF8(">" + tf.command)
 	renderer.Copy(tf.texture, nil, &sdl.Rect{X: 5, Y: height - 27, W: int32(w), H: int32(h)})
 }
